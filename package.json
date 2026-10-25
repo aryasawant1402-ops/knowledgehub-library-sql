@@ -1,0 +1,18 @@
+{
+  "name": "knowledgehub-library-sql",
+  "version": "1.0.0",
+  "description": "KnowledgeHub Public Library - MySQL backed library management system",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "db:init": "node scripts/import-sql.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "mysql2": "^3.11.5"
+  },
+  "license": "MIT"
+}

@@ -1,0 +1,29 @@
+# Render Blueprint: KnowledgeHub in Singapore.
+# The database is Aiven for MySQL (free). Fill the sync:false values
+# in the Render dashboard from the Aiven service overview. Do not commit them.
+services:
+  - type: web
+    name: knowledgehub-library
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: DB_SSL
+        value: "true"
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_NAME
+        sync: false
+      - key: DB_SSL_CA
+        sync: false

@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KnowledgeHub Public Library</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2319376d'/%3E%3Ctext x='16' y='21' font-size='13' font-family='Arial' font-weight='bold' fill='white' text-anchor='middle'%3EKH%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ======================= LOGIN ======================= -->
+<section id="login-view" class="login-view">
+  <form id="login-form" class="login-card" autocomplete="off">
+    <div class="brand-mark" aria-hidden="true">KH</div>
+    <h1>KnowledgeHub Public Library</h1>
+    <p class="muted">Library Administrator Login</p>
+
+    <label>Admin ID
+      <input name="adminId" required autofocus>
+    </label>
+    <label>Password
+      <input name="password" type="password" required>
+    </label>
+    <p id="login-error" class="form-error" role="alert"></p>
+    <button class="btn primary wide" type="submit">Login</button>
+    <p class="hint">Default: <code>libraryadmin</code> / <code>admin123</code></p>
+  </form>
+  <footer class="login-footer">KnowledgeHub Public Library © 2026 · Data stored in MySQL</footer>
+</section>
+
+<!-- ======================= APP ======================= -->
+<div id="app-view" class="app" hidden>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark small">KH</span> KnowledgeHub Public Library</div>
+    <div class="topbar-right">
+      <span id="admin-name" class="admin-name"></span>
+      <button id="btn-password" class="btn ghost-light">Password</button>
+      <button id="btn-logout" class="btn ghost-light">Logout</button>
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button data-tab="dashboard" class="active">Dashboard</button>
+    <button data-tab="books">Books</button>
+    <button data-tab="add">Add Book</button>
+    <button data-tab="update">Update Book</button>
+    <button data-tab="issue">Issue Book</button>
+    <button data-tab="return">Return Book</button>
+    <button data-tab="transactions">Transactions</button>
+  </nav>
+
+  <main class="content">
+
+    <!-- ---------- Dashboard ---------- -->
+    <section data-panel="dashboard">
+      <h2>Welcome, <span id="welcome-name">Library Administrator</span></h2>
+      <div class="cards" id="stat-cards"></div>
+
+      <div class="grid-2">
+        <div class="panel">
+          <h3>Books by category</h3>
+          <div id="category-bars" class="bars"></div>
+        </div>
+        <div class="panel">
+          <h3>Overdue books</h3>
+          <div id="overdue-list"></div>
+        </div>
+        <div class="panel">
+          <h3>Most issued</h3>
+          <div id="popular-list"></div>
+        </div>
+        <div class="panel">
+          <h3>Recent activity <span class="tag">from triggers</span></h3>
+          <ul id="activity-list" class="activity"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- Books ---------- -->
+    <section data-panel="books" hidden>
+      <div class="toolbar">
+        <h2>Books</h2>
+        <div class="toolbar-controls">
+          <input id="book-search" type="search" placeholder="Search ID, title or author">
+          <select id="book-category"><option value="">All categories</option></select>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Book ID</th><th>Book Name</th><th>Author</th><th>Category</th>
+            <th class="num">Total</th><th class="num">Available</th><th class="num">Weekly Rent</th>
+            <th>Status</th><th></th>
+          </tr></thead>
+          <tbody id="books-body"></tbody>
+        </table>
+      </div>
+      <p class="sql-note">SELECT * FROM v_books WHERE …</p>
+    </section>
+
+    <!-- ---------- Add Book ---------- -->
+    <section data-panel="add" hidden>
+      <form id="add-form" class="form-card">
+        <h2>Add New Book</h2>
+        <div class="form-grid">
+          <label>Book ID <input name="bookId" required maxlength="10" placeholder="BK126"></label>
+          <label>Book Name <input name="bookName" required maxlength="200"></label>
+          <label>Author <input name="author" required maxlength="100"></label>
+          <label>Category <input name="category" required list="category-options" maxlength="50"></label>
+          <label>Quantity <input name="quantity" type="number" min="0" step="1" required></label>
+          <label>Weekly Rent (₹) <input name="weeklyRent" type="number" min="0" step="0.01" required></label>
+        </div>
+        <button class="btn primary" type="submit">Add Book</button>
+        <p class="sql-note">CALL sp_add_book(id, name, author, category, quantity, rent)</p>
+      </form>
+    </section>
+
+    <!-- ---------- Update Book ---------- -->
+    <section data-panel="update" hidden>
+      <form id="update-form" class="form-card">
+        <h2>Update Book</h2>
+        <label>Book ID <input name="bookId" required list="book-options" placeholder="Type or pick a Book ID"></label>
+        <div id="update-current" class="book-preview" hidden></div>
+        <p class="muted small">Leave a field empty to keep its current value.</p>
+        <div class="form-grid">
+          <label>New Total Copies <input name="totalCopies" type="number" min="0" step="1"></label>
+          <label>New Weekly Rent (₹) <input name="weeklyRent" type="number" min="0" step="0.01"></label>
+          <label>New Author <input name="author" maxlength="100"></label>
+          <label>New Category <input name="category" list="category-options" maxlength="50"></label>
+        </div>
+        <div class="row-buttons">
+          <button class="btn primary" type="submit">Update Book</button>
+          <button class="btn danger" type="button" id="btn-delete">Delete Book</button>
+        </div>
+        <p class="sql-note">CALL sp_update_book(id, total, rent, author, category) · CALL sp_delete_book(id)</p>
+      </form>
+    </section>
+
+    <!-- ---------- Issue Book ---------- -->
+    <section data-panel="issue" hidden>
+      <form id="issue-form" class="form-card">
+        <h2>Issue Book</h2>
+        <div class="form-grid">
+          <label>Student Name <input name="studentName" required maxlength="100" list="student-options"></label>
+          <label>Book ID <input name="bookId" required list="available-options" placeholder="Type or pick a Book ID"></label>
+          <label>Issue Date <input name="issueDate" type="date" required></label>
+        </div>
+        <div id="issue-preview" class="book-preview" hidden></div>
+        <button class="btn primary" type="submit">Issue Book</button>
+        <p class="sql-note">CALL sp_issue_book(student, book_id, issue_date, admin) → triggers check stock and set due date</p>
+      </form>
+    </section>
+
+    <!-- ---------- Return Book ---------- -->
+    <section data-panel="return" hidden>
+      <form id="return-form" class="form-card">
+        <h2>Return Book</h2>
+        <label>Quick pick from currently issued books
+          <select id="return-pick"><option value="">— select —</option></select>
+        </label>
+        <div class="form-grid">
+          <label>Book ID <input name="bookId" required></label>
+          <label>Student Name <input name="studentName" required></label>
+          <label>Return Date <input name="returnDate" type="date" required></label>
+        </div>
+        <button class="btn primary" type="submit">Return Book</button>
+        <div id="return-receipt" class="receipt" hidden></div>
+        <p class="sql-note">CALL sp_return_book(book_id, student, return_date) → trigger calculates rent with fn_calculate_rent()</p>
+      </form>
+    </section>
+
+    <!-- ---------- Transactions ---------- -->
+    <section data-panel="transactions" hidden>
+      <div class="toolbar">
+        <h2>Transactions</h2>
+        <div class="toolbar-controls">
+          <div class="chips" id="txn-filter">
+            <button data-status="" class="active">All</button>
+            <button data-status="Issued">Issued</button>
+            <button data-status="Overdue">Overdue</button>
+            <button data-status="Returned">Returned</button>
+          </div>
+          <input id="txn-search" type="search" placeholder="Search student or book">
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>#</th><th>Student</th><th>Book ID</th><th>Book Name</th><th>Issue Date</th>
+            <th>Due Date</th><th>Return Date</th><th>Status</th><th class="num">Rent</th>
+          </tr></thead>
+          <tbody id="txn-body"></tbody>
+        </table>
+      </div>
+      <p class="sql-note">SELECT * FROM v_transactions WHERE …</p>
+    </section>
+  </main>
+</div>
+
+<!-- Change password dialog -->
+<dialog id="password-dialog">
+  <form id="password-form" method="dialog" class="dialog-form">
+    <h3>Change Password</h3>
+    <label>Current Password <input name="oldPassword" type="password" required></label>
+    <label>New Password <input name="newPassword" type="password" minlength="6" required></label>
+    <p id="password-error" class="form-error" role="alert"></p>
+    <div class="row-buttons">
+      <button class="btn primary" value="save">Save</button>
+      <button class="btn" value="cancel" formnovalidate>Cancel</button>
+    </div>
+  </form>
+</dialog>
+
+<datalist id="category-options"></datalist>
+<datalist id="book-options"></datalist>
+<datalist id="available-options"></datalist>
+<datalist id="student-options"></datalist>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
